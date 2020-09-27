@@ -9,3 +9,39 @@ And now you just connect to ip:port via PulseDroid software and enjoy
 Hope it will be very useful somewhere for someone else.
 
 Regards, Ivan ;)
+
+Determine which source to use
+Open up a terminal in Ubuntu and type
+
+$ pactl list sources short
+
+This will spit out a bunch of text, but what you’re looking for is the ‘analog-stereo.monitor.’
+
+0    alsa_output.pci-0000_01_00.1.hdmi-stereo.monitor    module-alsa-card.c    s16le 2ch 44100Hz    SUSPENDED
+1    alsa_output.pci-0000_00_1b.0.analog-stereo.monitor    module-alsa-card.c    s16le 2ch 44100Hz    SUSPENDED
+2    alsa_input.pci-0000_00_1b.0.analog-stereo    module-alsa-card.c    s16le 2ch 44100Hz    SUSPENDED
+
+Look for “analog-stereo.monitor” and take note of the index number on the left.  In my case, it’s 1.
+
+After this, you can run:
+
+$ pactl load-module module-simple-protocol-tcp rate=48000 format=s16le channels=2 source=1 record=true port=12345
+
+Unload module
+
+$ pactl unload-module module-simple-protocol-tcp
+
+You can to edit the config files to load this module with the specific parameters.
+https://wiki.archlinux.org/index.php/PulseAudio#default.pa
+create if not exist ~/.config/pulse/default.pa
+Rather than being a complete copy, ~/.config/pulse/default.pa can start with the line .include /etc/pulse/default.pa and then just override the defaults.
+and add
+
+    .include /etc/pulse/default.pa
+    load-module module-simple-protocol-tcp rate=48000 format=s16le channels=2 source=1 record=true port=12345
+
+Restart Pulse
+Restart PulseAudio with the new configuration
+
+$ pulseaudio -k
+$ pulseaudio --start
